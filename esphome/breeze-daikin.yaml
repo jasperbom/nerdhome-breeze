@@ -1,0 +1,142 @@
+# Nerdhome Breeze voor Daikin - shared ESPHome package (board: daikin-c6 rev 1.0)
+# Daikin indoor units with an S21 port (Emura, Perfera, Stylish, Sensira, Comfora, ...).
+#
+# Board: ESP32-C6-MINI-1U-H4, UART to the S21 port on GPIO19 (TX) / GPIO20 (RX), 2400 8E2.
+# Powered from S21 pin 4 (12-15 V) through an on-board buck converter.
+# This file holds everything that is the same for every indoor unit. Each unit gets a small
+# local YAML that pulls this file from GitHub (see daikin-voorbeeld.yaml) and only adds its
+# name, API key and wifi credentials. Change something here, push it, and every unit picks it
+# up on its next build/install.
+#
+# No secrets in this file (remote packages cannot use !secret).
+
+substitutions:
+  name: breeze-daikin
+  friendly_name: Nerdhome Breeze
+  project_version: "1.0.0"
+  log_level: INFO
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  min_version: "2026.7.0"     # daikin_s21 needs 2026.7+
+  project:
+    name: nerdhome.breeze-daikin
+    version: ${project_version}
+
+esp32:
+  variant: esp32c6
+  board: esp32-c6-devkitc-1
+  flash_size: 4MB
+  framework:
+    type: esp-idf
+
+# Logs go over the native USB port (bench only); the hardware UART is used for the AC.
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+  level: ${log_level}
+
+api:
+
+wifi:
+  ap:
+    ssid: ${name}
+
+captive_portal:
+
+external_components:
+  - source: github://asund/esphome-daikin-s21@main
+    components: [daikin_s21]
+
+# The board's MOSFET level shifters are non-inverting and pull the S21 lines up to 5 V,
+# so a normal (push-pull, non-inverted) UART is right here.
+uart:
+  id: s21_uart
+  tx_pin: GPIO19
+  rx_pin: GPIO20
+  baud_rate: 2400
+  data_bits: 8
+  parity: EVEN
+  stop_bits: 2
+
+daikin_s21:
+  uart_id: s21_uart
+  # debug_protocol: true      # enable when reporting issues
+
+climate:
+  - platform: daikin_s21
+    name: None                # entity gets the friendly_name of the device
+    id: airco
+    sensor: daikin_inside_temp
+
+select:
+  - platform: daikin_s21
+    vertical_swing:
+      name: Lamelstand verticaal
+
+sensor:
+  - platform: daikin_s21
+    inside_temperature:
+      id: daikin_inside_temp
+      name: Binnentemperatuur
+      filters:
+        - delta: 0.0
+    outside_temperature:
+      name: Buitentemperatuur
+      filters:
+        - delta: 0.0
+    coil_temperature:
+      name: Spoeltemperatuur
+      entity_category: diagnostic
+      filters:
+        - delta: 0.0
+    fan_speed:
+      name: Ventilatorsnelheid
+      entity_category: diagnostic
+      filters:
+        - delta: 0.0
+    compressor_frequency:
+      name: Compressorfrequentie
+      entity_category: diagnostic
+      filters:
+        - delta: 0.0
+  - platform: wifi_signal
+    name: WiFi signaal
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: uptime
+    name: Uptime
+    entity_category: diagnostic
+
+# Protocol v2+ units only (newer models); enable after checking with debug_protocol:
+# switch:
+#   - platform: daikin_s21
+#     powerful:
+#       name: Powerful
+#     econo:
+#       name: Econo
+#     quiet:
+#       name: Stil
+
+binary_sensor:
+  - platform: daikin_s21
+    defrost:
+      name: Ontdooien
+      entity_category: diagnostic
+
+text_sensor:
+  - platform: daikin_s21
+    model:
+      name: Model
+      entity_category: diagnostic
+    software_version:
+      name: Softwareversie
+      entity_category: diagnostic
+
+status_led:
+  pin: GPIO23
+
+button:
+  - platform: restart
+    name: Herstart
+    entity_category: config

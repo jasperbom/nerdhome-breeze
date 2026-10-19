@@ -1,6 +1,6 @@
-# Builds the Nerdhome Breeze factory firmware and publishes it on GitHub Pages:
-#   https://jasperbom.github.io/nerdhome-breeze/            web installer (flash from the browser)
-#   https://jasperbom.github.io/nerdhome-breeze/firmware/toshiba/manifest.json   OTA manifest for Home Assistant
+# Builds the Nerdhome Breeze factory firmware for every variant and publishes it on GitHub Pages:
+#   https://jasperbom.github.io/nerdhome-breeze/                              web installer
+#   https://jasperbom.github.io/nerdhome-breeze/firmware/<variant>/manifest.json   OTA manifest per variant
 # Runs on every change to esphome/, by hand, and on the 1st of every month with the newest
 # ESPHome release, so devices on the factory firmware get a fresh build regularly.
 name: Firmware
@@ -46,18 +46,19 @@ jobs:
           key: esphome-${{ runner.os }}-${{ hashFiles('esphome/breeze-*.yaml') }}
           restore-keys: esphome-${{ runner.os }}-
 
-      - name: Compile
-        run: esphome -s project_version "${{ steps.v.outputs.version }}" compile esphome/breeze-toshiba.factory.yaml
-
-      - name: Assemble site
+      - name: Compile and assemble site
         run: |
-          python3 esphome/make_site.py \
-            --build-dir esphome/.esphome/build \
-            --version "${{ steps.v.outputs.version }}" \
-            --summary "ESPHome $(esphome version | awk '{print $2}'), commit ${GITHUB_SHA::7}" \
-            --release-url "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
-            --variant toshiba \
-            --out _site
+          set -e
+          V="${{ steps.v.outputs.version }}"
+          SUMMARY="ESPHome $(esphome version | awk '{print $2}'), commit ${GITHUB_SHA::7}"
+          URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          for variant in toshiba daikin; do
+            esphome -s project_version "$V" compile "esphome/breeze-$variant.factory.yaml"
+            python3 esphome/make_site.py \
+              --build-dir "esphome/.esphome/build/breeze-$variant" \
+              --version "$V" --summary "$SUMMARY" --release-url "$URL" \
+              --variant "$variant" --out _site
+          done
 
       - uses: actions/upload-pages-artifact@v3
         with:

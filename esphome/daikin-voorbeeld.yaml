@@ -1,0 +1,29 @@
+# Daikin voorbeeld - local config for one Daikin indoor unit (put this in the ESPHome Builder).
+# Everything except the name, API key and wifi comes from GitHub:
+#   https://github.com/jasperbom/nerdhome-breeze/blob/main/esphome/breeze-daikin.yaml
+# For another unit: copy this file and change the two substitutions and the API key.
+
+substitutions:
+  name: daikin-woonkamer
+  friendly_name: Airco woonkamer
+
+packages:
+  daikin:
+    url: https://github.com/jasperbom/nerdhome-breeze
+    ref: main
+    files: [esphome/breeze-daikin.yaml]
+    refresh: 1d             # fetch changes from GitHub at most once a day
+
+api:
+  encryption:
+    key: !secret daikin_woonkamer_api_key
+
+ota:
+  - platform: esphome
+    encryption:             # uses the API key above, no separate OTA password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    password: !secret fallback_ap_password

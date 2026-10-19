@@ -1,0 +1,32 @@
+# Nerdhome Breeze voor Toshiba - factory firmware, built by GitHub Actions and published on GitHub Pages.
+#
+# - Flash it from the browser (web installer on the GitHub Pages site), then set wifi
+#   right away over USB (Improv) or via the "breeze-toshiba-xxxxxx" access point.
+# - Home Assistant finds it automatically and shows a firmware update entity; every new
+#   build on GitHub shows up there as an update.
+# - Want your own config instead? "Take control" / adopt it in the ESPHome Builder: that
+#   creates a small local YAML that pulls breeze-toshiba.yaml from GitHub.
+
+packages:
+  toshiba: !include breeze-toshiba.yaml
+
+esphome:
+  name_add_mac_suffix: true
+
+dashboard_import:
+  package_import_url: github://jasperbom/nerdhome-breeze/esphome/breeze-toshiba.yaml@main
+  import_full_config: false
+
+improv_serial:
+
+ota:
+  - platform: esphome
+  - platform: http_request
+
+http_request:
+
+update:
+  - platform: http_request
+    id: firmware_update
+    name: Firmware
+    source: https://jasperbom.github.io/nerdhome-breeze/firmware/toshiba/manifest.json

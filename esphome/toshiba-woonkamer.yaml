@@ -1,0 +1,29 @@
+# Airco woonkamer - local config for one indoor unit (put this in the ESPHome Builder).
+# Everything except the name, API key and wifi comes from GitHub:
+#   https://github.com/jasperbom/nerdhome-breeze/blob/main/esphome/breeze-toshiba.yaml
+# For another unit: copy this file and change the two substitutions and the API key.
+
+substitutions:
+  name: toshiba-woonkamer
+  friendly_name: Airco woonkamer
+
+packages:
+  toshiba:
+    url: https://github.com/jasperbom/nerdhome-breeze
+    ref: main
+    files: [esphome/breeze-toshiba.yaml]
+    refresh: 1d             # fetch changes from GitHub at most once a day
+
+api:
+  encryption:
+    key: !secret toshiba_woonkamer_api_key
+
+ota:
+  - platform: esphome
+    encryption:             # uses the API key above, no separate OTA password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    password: !secret fallback_ap_password

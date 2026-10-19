@@ -1,0 +1,262 @@
+(footprint "JST_PA_S05B-PASK-2_1x05_P2.00mm_Horizontal"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(descr "JST PA series connector, S05B-PASK-2 (LCSC C489718), 2.00mm pitch, side entry, through hole. Mates with the Toshiba CN22 wifi-module cable.")
+	(tags "connector JST PA side entry Toshiba CN22")
+	(attr through_hole)
+	(property "Reference" "REF**"
+		(at 4 -4.6 0)
+		(layer "F.SilkS")
+		(uuid "2eca232e-ef6d-4e99-a372-af334e1450ef")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "S05B-PASK-2"
+		(at 4 9.3 0)
+		(layer "F.Fab")
+		(uuid "c6e80cfe-46f6-44ae-acf9-9a1d01c5eaf5")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(fp_text user "${REFERENCE}"
+		(at 4 4.5 0)
+		(layer "F.Fab")
+		(uuid "4f339f5b-245d-447f-a522-447722935ed1")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(fp_line
+		(start -2 -3.5)
+		(end 10 -3.5)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "8be262d3-258a-4688-9c32-8d32324e10f6")
+	)
+	(fp_line
+		(start 10 -3.5)
+		(end 10 8.2)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "06d7dd79-a070-4082-8c79-e2f914e1cd10")
+	)
+	(fp_line
+		(start 10 8.2)
+		(end -2 8.2)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "dc62cae0-e34b-4851-b5d1-39f6f85109be")
+	)
+	(fp_line
+		(start -2 8.2)
+		(end -2 -3.5)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "3e6797c3-a807-4ae7-8f00-99f01f8d75fb")
+	)
+	(fp_text user "cable entry"
+		(at 4 7.3 0)
+		(layer "F.Fab")
+		(uuid "6509c6c6-20eb-4ff3-84ae-b2e822ff6ce2")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.1)
+			)
+		)
+	)
+	(fp_line
+		(start -2.12 -3.62)
+		(end 10.12 -3.62)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "5ed390cc-43ae-41b6-8999-b4d8475fc06a")
+	)
+	(fp_line
+		(start -2.12 8.32)
+		(end 10.12 8.32)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "9900a801-fe9c-4103-932c-4944eb556512")
+	)
+	(fp_line
+		(start -2.12 -3.62)
+		(end -2.12 1.2)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "8e5ed95b-8723-4f46-8df0-c4d2f566833a")
+	)
+	(fp_line
+		(start -2.12 3)
+		(end -2.12 8.32)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "6b60080b-e741-434e-bb82-0c8d9ba3fc8b")
+	)
+	(fp_line
+		(start 10.12 -3.62)
+		(end 10.12 1.2)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "5b9ce19f-8485-4b77-bb7d-d65d211a7a91")
+	)
+	(fp_line
+		(start 10.12 3)
+		(end 10.12 8.32)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "84142452-e301-4251-bf87-54b3d97a8b1c")
+	)
+	(fp_poly
+		(pts
+			(xy 0 -1.25)
+			(xy -0.4 -1.85)
+			(xy 0.4 -1.85)
+			(xy 0 -1.25)
+		)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(fill yes)
+		(layer "F.SilkS")
+		(uuid "abb407ce-c4e0-47db-a06d-da69549710f1")
+	)
+	(fp_line
+		(start -2.3 -3.8)
+		(end 10.3 -3.8)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "378e50fd-dcf4-464a-9f40-36f9a2efcb7d")
+	)
+	(fp_line
+		(start 10.3 -3.8)
+		(end 10.3 8.5)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "c87147ca-f79f-4b37-980e-a252ec3f4853")
+	)
+	(fp_line
+		(start 10.3 8.5)
+		(end -2.3 8.5)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "27bc0eff-0367-4c98-bce9-f5117b8dbf54")
+	)
+	(fp_line
+		(start -2.3 8.5)
+		(end -2.3 -3.8)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(layer "F.CrtYd")
+		(uuid "019259de-372a-412e-b25a-363cee2350fc")
+	)
+	(pad "1" thru_hole rect
+		(at 0 0)
+		(size 1.35 1.35)
+		(drill 0.8)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "6dabcb84-f113-42fe-a67b-b6a0c470f833")
+	)
+	(pad "2" thru_hole circle
+		(at 2 0)
+		(size 1.35 1.35)
+		(drill 0.8)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "badff3db-98a7-4667-bfdb-a5312c627756")
+	)
+	(pad "3" thru_hole circle
+		(at 4 0)
+		(size 1.35 1.35)
+		(drill 0.8)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "3778141e-5b2c-4f4e-bf01-176d8ad6b129")
+	)
+	(pad "4" thru_hole circle
+		(at 6 0)
+		(size 1.35 1.35)
+		(drill 0.8)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "374cb726-5aac-4856-a64f-f7754a4a10b3")
+	)
+	(pad "5" thru_hole circle
+		(at 8 0)
+		(size 1.35 1.35)
+		(drill 0.8)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "a7ddb173-bf6b-454e-a9eb-c2093dddeda3")
+	)
+	(pad "" np_thru_hole circle
+		(at -1.5 2.1)
+		(size 1.1 1.1)
+		(drill 1.1)
+		(layers "*.Cu" "*.Mask")
+		(uuid "f6fc3730-a022-4fe2-8424-a5177a3f997a")
+	)
+	(pad "" np_thru_hole circle
+		(at 9.5 2.1)
+		(size 1.1 1.1)
+		(drill 1.1)
+		(layers "*.Cu" "*.Mask")
+		(uuid "90417282-dec1-4607-90e8-d4aea6cd6270")
+	)
+)

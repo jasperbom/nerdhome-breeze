@@ -1,0 +1,88 @@
+# Nerdhome Breeze voor Toshiba - shared ESPHome package (board: toshiba-c6 rev 1.0)
+# Toshiba RAS indoor units (Shorai, Seiya, Haori, ...) via the CN22 wifi port.
+#
+# Board: ESP32-C6-MINI-1U-H4, UART to the indoor unit on GPIO19 (TX) / GPIO20 (RX), 9600 8E1.
+# This file holds everything that is the same for every indoor unit. Each unit gets a small
+# local YAML that pulls this file from GitHub (see toshiba-woonkamer.yaml) and only adds its
+# name, API key and wifi credentials. Change something here, push it, and every unit picks it
+# up on its next build/install.
+#
+# No secrets in this file (remote packages cannot use !secret).
+
+substitutions:
+  name: breeze-toshiba
+  friendly_name: Nerdhome Breeze
+  project_version: "1.0.0"
+  log_level: INFO
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  project:
+    name: nerdhome.breeze-toshiba
+    version: ${project_version}
+
+esp32:
+  variant: esp32c6
+  board: esp32-c6-devkitc-1
+  flash_size: 4MB
+  framework:
+    type: esp-idf
+
+# Logs go over the native USB port (bench only); the hardware UART is used for the AC.
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+  level: ${log_level}
+
+api:
+
+wifi:
+  ap:
+    ssid: ${name}
+
+captive_portal:
+
+external_components:
+  - source: github://pedobry/esphome_toshiba_suzumi
+    components: [toshiba_suzumi]
+
+uart:
+  id: uart_bus
+  tx_pin: GPIO19
+  rx_pin: GPIO20
+  baud_rate: 9600
+  parity: EVEN
+
+climate:
+  - platform: toshiba_suzumi
+    name: None              # entity gets the friendly_name of the device
+    id: airco
+    uart_id: uart_bus
+    outdoor_temp:
+      name: Buitentemperatuur
+    power_select:
+      name: Vermogensniveau
+    # Optional, enable after checking your unit supports them:
+    # vertical_air_direction:
+    #   name: Lamelstand verticaal
+    # self_clean:
+    #   name: Zelfreiniging
+    # horizontal_swing: true
+    # disable_wifi_led: true
+
+status_led:
+  pin: GPIO23
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi signaal
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: uptime
+    name: Uptime
+    entity_category: diagnostic
+
+button:
+  - platform: restart
+    name: Herstart
+    entity_category: config

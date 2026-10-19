@@ -1,0 +1,74 @@
+# Builds the Nerdhome Breeze factory firmware and publishes it on GitHub Pages:
+#   https://jasperbom.github.io/nerdhome-breeze/            web installer (flash from the browser)
+#   https://jasperbom.github.io/nerdhome-breeze/firmware/toshiba/manifest.json   OTA manifest for Home Assistant
+# Runs on every change to esphome/, by hand, and on the 1st of every month with the newest
+# ESPHome release, so devices on the factory firmware get a fresh build regularly.
+name: Firmware
+
+on:
+  push:
+    branches: [main]
+    paths: ["esphome/**", ".github/workflows/firmware.yml"]
+  schedule:
+    - cron: "17 4 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ESPHome
+        run: pip install esphome
+
+      - name: Version
+        id: v
+        run: echo "version=$(date -u +%Y.%-m.%-d).${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/esphome
+          key: esphome-${{ runner.os }}-${{ hashFiles('esphome/breeze-*.yaml') }}
+          restore-keys: esphome-${{ runner.os }}-
+
+      - name: Compile
+        run: esphome -s project_version "${{ steps.v.outputs.version }}" compile esphome/breeze-toshiba.factory.yaml
+
+      - name: Assemble site
+        run: |
+          python3 esphome/make_site.py \
+            --build-dir esphome/.esphome/build \
+            --version "${{ steps.v.outputs.version }}" \
+            --summary "ESPHome $(esphome version | awk '{print $2}'), commit ${GITHUB_SHA::7}" \
+            --release-url "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+            --variant toshiba \
+            --out _site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

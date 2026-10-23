@@ -303,7 +303,7 @@ void ToshibaClimateUart::parseResponse(std::vector<uint8_t> rawData) {
       sensor = static_cast<ToshibaCommandType>(rawData[14]);
       value = 0;
       break;
-    case 114:  // Nerdhome: unit identification, sent by the unit once after the handshake
+    case 114:  // Nerdhome: unit identification, sent by the unit every ~4-5 minutes
       if (rawData[12] == 0xE0) {
         this->parse_unit_info_(rawData);
       } else {
@@ -940,8 +940,8 @@ void ToshibaClimateUart::on_set_plasma(bool state) {
 void ToshibaPlasmaSwitch::write_state(bool state) { parent_->on_set_plasma(state); }
 
 /**
- * Nerdhome addition: unit identification message (114 bytes, type 0xE0), sent once by
- * the unit after the handshake. Fixed-width, NUL-padded ASCII fields:
+ * Nerdhome addition: unit identification message (114 bytes, type 0xE0), sent unsolicited
+ * by the unit every ~4-5 minutes. Fixed-width, NUL-padded ASCII fields:
  *   indoor:  model @13 (21), serial @34 (13), date code @47 (9), software @56 (7)
  *   outdoor: model @63 (21), serial @84 (13), date code @97 (9), software @106 (7)
  * Example: RAS-B10P2KVSG-E / 62601125 / 24081600 / 022020 and

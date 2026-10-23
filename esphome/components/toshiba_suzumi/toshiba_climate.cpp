@@ -303,6 +303,13 @@ void ToshibaClimateUart::parseResponse(std::vector<uint8_t> rawData) {
       sensor = static_cast<ToshibaCommandType>(rawData[14]);
       value = 0;
       break;
+    case 114:  // Nerdhome: unit identification, sent by the unit once after the handshake
+      if (rawData[12] == 0xE0) {
+        this->parse_unit_info_(rawData);
+      } else {
+        ESP_LOGD(TAG, "Received 114-byte message of unknown type 0x%02X", rawData[12]);
+      }
+      return;
     default:
       ESP_LOGW(TAG, "Received unknown message with length: %d and value %s", length,
                format_hex_pretty(rawData).c_str());
@@ -931,6 +938,42 @@ void ToshibaClimateUart::on_set_plasma(bool state) {
 }
 
 void ToshibaPlasmaSwitch::write_state(bool state) { parent_->on_set_plasma(state); }
+
+/**
+ * Nerdhome addition: unit identification message (114 bytes, type 0xE0), sent once by
+ * the unit after the handshake. Fixed-width, NUL-padded ASCII fields:
+ *   indoor:  model @13 (21), serial @34 (13), date code @47 (9), software @56 (7)
+ *   outdoor: model @63 (21), serial @84 (13), date code @97 (9), software @106 (7)
+ * Example: RAS-B10P2KVSG-E / 62601125 / 24081600 / 022020 and
+ *          RAS-2M14G3AVG-E / 62500694 / 23151100 / 63E816 (two indoor units on one
+ *          outdoor unit report the same outdoor fields).
+ */
+void ToshibaClimateUart::parse_unit_info_(const std::vector<uint8_t> &data) {
+  auto field = [&data](size_t offset, size_t len) -> std::string {
+    std::string out;
+    for (size_t i = offset; i < offset + len && i + 1 < data.size(); i++) {
+      uint8_t c = data[i];
+      if (c == 0)
+        break;
+      if (c >= 0x20 && c < 0x7F)
+        out += static_cast<char>(c);
+    }
+    return out;
+  };
+  auto publish = [](text_sensor::TextSensor *sensor, const std::string &value) {
+    if (sensor != nullptr && !value.empty())
+      sensor->publish_state(value);
+  };
+  std::string idu_model = field(13, 21);
+  std::string odu_model = field(63, 21);
+  ESP_LOGI(TAG, "Unit identification: indoor %s, outdoor %s", idu_model.c_str(), odu_model.c_str());
+  publish(this->idu_model_sensor_, idu_model);
+  publish(this->idu_serial_sensor_, field(34, 13));
+  publish(this->idu_software_sensor_, field(56, 7));
+  publish(this->odu_model_sensor_, odu_model);
+  publish(this->odu_serial_sensor_, field(84, 13));
+  publish(this->odu_software_sensor_, field(106, 7));
+}
 
 // Nerdhome addition: Wi-Fi LED switch. No read-back register, so publish directly.
 void ToshibaWifiLedSwitch::write_state(bool state) {

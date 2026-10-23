@@ -124,6 +124,20 @@ climate:
     power:
       name: Vermogen
       accuracy_decimals: 0
+    # Typenummers, serienummers en softwareversies van binnen- en buitendeel. De unit
+    # stuurt ze één keer na het opstarten van de Breeze.
+    idu_model:
+      name: Model binnendeel
+    idu_serial:
+      name: Serienummer binnendeel
+    idu_software:
+      name: Software binnendeel
+    odu_model:
+      name: Model buitendeel
+    odu_serial:
+      name: Serienummer buitendeel
+    odu_software:
+      name: Software buitendeel
     # Statusberichten die een draaiende unit uit zichzelf stuurt (niet elk model).
     # Standaard verborgen in Home Assistant; aanzetten als je unit ze levert.
     cdu_load:

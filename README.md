@@ -44,6 +44,7 @@ Units met deze firmware krijgen in Home Assistant een update-entiteit *Firmware*
 - **Energie vandaag** (kWh) uit de eigen meter van de unit en een geschat **Vermogen** (W), op modellen met energiemeting. De unit krijgt daarvoor de klok van Home Assistant.
 - **Draaiuren** (totaal) en **Draaiuren sinds onderhoud**, met een instelbaar **Onderhoudsinterval** (standaard 250 uur), een melding **Onderhoud nodig** en een knop **Onderhoud uitgevoerd** die de teller op nul zet. Een uur telt mee zodra de unit aan staat, in elke stand.
 - **Diagnose, standaard verborgen**: compressorbelasting en -stroom, pers- en zuiggastemperatuur, warmtewisselaar buiten en binnen (TC, TCJ) en ventilatortoerental. Deze komen uit statusberichten die niet elk model stuurt; zet ze in Home Assistant aan als je unit ze levert.
+- **Typenummer, serienummer en softwareversie** van binnen- en buitendeel, zoals de unit ze zelf doorgeeft (handig bij support en garantie).
 - **Van de Breeze zelf**: chiptemperatuur, IP-adres, wifi-netwerk, wifi-signaal, ESPHome-versie en uptime.
 
 Wat een unit niet ondersteunt (bijvoorbeeld horizontale lamellen of een preset), negeert hij. Losse ESPHome-entiteiten kunnen in Home Assistant niet op *Niet beschikbaar* staan; dat kan alleen het hele apparaat.

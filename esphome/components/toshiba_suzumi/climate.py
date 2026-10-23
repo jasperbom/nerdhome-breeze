@@ -1,6 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import binary_sensor, sensor, climate, uart, select, switch
+from esphome.components import binary_sensor, sensor, climate, uart, select, switch, text_sensor
 from esphome.const import (
     CONF_ID,
     STATE_CLASS_MEASUREMENT,
@@ -16,6 +16,7 @@ from esphome.const import (
     DEVICE_CLASS_POWER,
     CONF_TIME_ID,
     ENTITY_CATEGORY_CONFIG,
+    ENTITY_CATEGORY_DIAGNOSTIC,
     STATE_CLASS_TOTAL_INCREASING,
     __version__ as ESPHOME_VERSION
 )
@@ -25,7 +26,7 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 DEPENDENCIES = ["uart"]
-AUTO_LOAD = ["binary_sensor", "sensor", "select", "switch"]
+AUTO_LOAD = ["binary_sensor", "sensor", "select", "switch", "text_sensor"]
 
 CONF_ROOM_TEMP = "room_temp"
 CONF_INDOOR_TEMP = "indoor_temp"
@@ -46,6 +47,15 @@ CONF_SUPPORTED_PRESETS = "supported_presets"
 CONF_SELF_CLEAN = "self_clean"
 CONF_PLASMA = "plasma"  # Nerdhome addition: plasma / ion filter
 CONF_WIFI_LED = "wifi_led"  # Nerdhome addition: Wi-Fi LED as a switch
+# Nerdhome addition: unit identification text sensors (config key -> (setter, icon))
+UNIT_INFO_SENSORS = {
+    "idu_model": ("set_idu_model_sensor", "mdi:air-conditioner"),
+    "idu_serial": ("set_idu_serial_sensor", "mdi:barcode"),
+    "idu_software": ("set_idu_software_sensor", "mdi:chip"),
+    "odu_model": ("set_odu_model_sensor", "mdi:hvac"),
+    "odu_serial": ("set_odu_serial_sensor", "mdi:barcode"),
+    "odu_software": ("set_odu_software_sensor", "mdi:chip"),
+}
 CONF_TIME_SYNC_INTERVAL = "time_sync_interval"
 CONF_ENERGY = "energy"
 CONF_POWER = "power"
@@ -143,6 +153,13 @@ CONFIG_SCHEMA = climate.climate_schema(ToshibaClimateUart).extend(
             entity_category=ENTITY_CATEGORY_CONFIG,
             default_restore_mode="RESTORE_DEFAULT_ON",
         ),
+        **{
+            cv.Optional(key): text_sensor.text_sensor_schema(
+                icon=icon,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+            )
+            for key, (_, icon) in UNIT_INFO_SENSORS.items()
+        },
         cv.Optional(FEATURE_HORIZONTAL_SWING): cv.boolean,
         cv.Optional(DISABLE_WIFI_LED): cv.boolean,
         cv.Optional(DISABLE_HEAT_MODE): cv.boolean,
@@ -241,6 +258,11 @@ async def to_code(config):
         sw = await switch.new_switch(config[CONF_WIFI_LED])
         await cg.register_parented(sw, config[CONF_ID])
         cg.add(var.set_wifi_led_switch(sw))
+
+    for key, (setter, _) in UNIT_INFO_SENSORS.items():
+        if key in config:
+            sens = await text_sensor.new_text_sensor(config[key])
+            cg.add(getattr(var, setter)(sens))
 
     if FEATURE_HORIZONTAL_SWING in config:
         cg.add(var.set_horizontal_swing(True))

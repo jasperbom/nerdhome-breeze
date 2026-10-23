@@ -26,6 +26,10 @@ commit `a306be6` (9 juli 2026), onder de GPL-3-licentie (zie `LICENSE`).
 - **Wifi-lampje als schakelaar** (`wifi_led:`), in plaats van alleen de vaste optie
   `disable_wifi_led`. De unit heeft geen leesbaar register voor het lampje, dus de stand
   wordt in flash onthouden en bij het opstarten opnieuw verstuurd.
+- **Typenummers** (`idu_model`, `idu_serial`, `idu_software`, `odu_model`, `odu_serial`,
+  `odu_software`): de unit stuurt na de handshake één keer een bericht van 114 bytes (type
+  `0xE0`) met vaste, met NUL opgevulde ASCII-velden voor binnen- en buitendeel: typenummer
+  (21), serienummer (13), datumcode (9) en softwareversie (7). Zie `parse_unit_info_`.
 - **Grenscontroles:** een antwoord op het energieregister dat korter is dan de volledige
   uurtabel (units zonder energiemeter), of een ODU/IDU-bericht met een onverwachte lengte,
   wordt genegeerd in plaats van buiten het bericht te lezen.

@@ -7,6 +7,7 @@
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/select/select.h"
 #include "esphome/components/switch/switch.h"
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "toshiba_climate_mode.h"
 
 namespace esphome {
@@ -74,6 +75,13 @@ class ToshibaClimateUart : public PollingComponent, public climate::Climate, pub
   void set_self_clean_sensor(binary_sensor::BinarySensor *self_clean_sensor) { self_clean_sensor_ = self_clean_sensor; }
   void set_plasma_switch(switch_::Switch *plasma_switch) { plasma_switch_ = plasma_switch; }
   void set_wifi_led_switch(switch_::Switch *wifi_led_switch) { wifi_led_switch_ = wifi_led_switch; }
+  // Nerdhome addition: unit identification (model / serial / software of indoor and outdoor unit)
+  void set_idu_model_sensor(text_sensor::TextSensor *s) { idu_model_sensor_ = s; }
+  void set_idu_serial_sensor(text_sensor::TextSensor *s) { idu_serial_sensor_ = s; }
+  void set_idu_software_sensor(text_sensor::TextSensor *s) { idu_software_sensor_ = s; }
+  void set_odu_model_sensor(text_sensor::TextSensor *s) { odu_model_sensor_ = s; }
+  void set_odu_serial_sensor(text_sensor::TextSensor *s) { odu_serial_sensor_ = s; }
+  void set_odu_software_sensor(text_sensor::TextSensor *s) { odu_software_sensor_ = s; }
   void set_horizontal_swing(bool enabled) { horizontal_swing_ = enabled; }
   void disable_heat_mode(bool disabled) { heat_mode_disabled_ = disabled; }
   void disable_wifi_led(bool disabled) { wifi_led_disabled_ = disabled; }
@@ -102,6 +110,12 @@ class ToshibaClimateUart : public PollingComponent, public climate::Climate, pub
   binary_sensor::BinarySensor *self_clean_sensor_ = nullptr;
   switch_::Switch *plasma_switch_ = nullptr;
   switch_::Switch *wifi_led_switch_ = nullptr;
+  text_sensor::TextSensor *idu_model_sensor_ = nullptr;
+  text_sensor::TextSensor *idu_serial_sensor_ = nullptr;
+  text_sensor::TextSensor *idu_software_sensor_ = nullptr;
+  text_sensor::TextSensor *odu_model_sensor_ = nullptr;
+  text_sensor::TextSensor *odu_serial_sensor_ = nullptr;
+  text_sensor::TextSensor *odu_software_sensor_ = nullptr;
   // Nerdhome addition: climate action from the compressor load in the unsolicited
   // ODU status messages. 0 = no ODU status received yet.
   uint32_t last_odu_status_ms_ = 0;
@@ -148,6 +162,7 @@ class ToshibaClimateUart : public PollingComponent, public climate::Climate, pub
   void publish_vertical_air_direction_(SWING swing_mode);
   void on_set_plasma(bool state);
   void update_action_();
+  void parse_unit_info_(const std::vector<uint8_t> &data);
   void configure_supported_custom_modes_();
 #ifdef USE_TIME
   void check_time_sync_(uint32_t now);

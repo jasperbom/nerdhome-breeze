@@ -43,7 +43,13 @@ wifi:
 captive_portal:
 
 external_components:
-  - source: github://pedobry/esphome_toshiba_suzumi
+  # Nerdhome-versie van pedobry/esphome_toshiba_suzumi, met plasmafilter.
+  # Zie esphome/components/toshiba_suzumi/NERDHOME.md voor herkomst en wijzigingen.
+  - source:
+      type: git
+      url: https://github.com/jasperbom/nerdhome-breeze
+      ref: main
+      path: esphome/components
     components: [toshiba_suzumi]
 
 uart:
@@ -58,20 +64,88 @@ climate:
     name: None              # entity gets the friendly_name of the device
     id: airco
     uart_id: uart_bus
+    update_interval: 60s    # kamertemperatuur elke minuut opvragen (component-standaard: 120 s)
+    indoor_temp:
+      # De unit meldt de kamertemperatuur in hele graden. Een glijdend gemiddelde over
+      # 10 minuten haalt het heen-en-weer springen rond een halve graad weg en geeft
+      # daar een tussenwaarde (bijv. 19,6). Staat de temperatuur stil, dan blijft het
+      # een heel getal. Het climate-entity zelf blijft de ruwe waarde tonen.
+      name: Ruimtetemperatuur
+      id: ruimtetemperatuur
+      accuracy_decimals: 1
+      filters:
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 1
     outdoor_temp:
       name: Buitentemperatuur
     power_select:
       name: Vermogensniveau
+    # Lamellen en plasmafilter staan standaard aan. Een unit zonder vaste lamelstanden,
+    # horizontale lamellen of plasmafilter negeert die commando's; het plasmafilter blijft
+    # dan op "Onbekend" omdat de unit nooit een stand terugmeldt.
+    vertical_air_direction:
+      name: Lamellen verticaal
+      icon: mdi:arrow-up-down
+    horizontal_swing: true
+    plasma:
+      name: Plasmafilter
     # Optional, enable after checking your unit supports them:
-    # vertical_air_direction:
-    #   name: Lamelstand verticaal
     # self_clean:
     #   name: Zelfreiniging
-    # horizontal_swing: true
     # disable_wifi_led: true
 
 status_led:
   pin: GPIO23
+
+# --- Draaiuren en onderhoud -------------------------------------------------------
+# Telt elke minuut dat de binnenunit aan staat (elke stand behalve uit). De tellers
+# staan in flash en overleven een herstart; ze worden hooguit elke 10 minuten
+# weggeschreven om slijtage te beperken (na stroomuitval mis je dus max. 10 minuten).
+preferences:
+  flash_write_interval: 10min
+
+globals:
+  - id: draaitijd_totaal_s
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+  - id: draaitijd_onderhoud_s
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+
+interval:
+  - interval: 60s
+    then:
+      - lambda: |-
+          if (id(airco).mode != climate::CLIMATE_MODE_OFF) {
+            id(draaitijd_totaal_s) += 60;
+            id(draaitijd_onderhoud_s) += 60;
+          }
+      - component.update: draaiuren_totaal
+      - component.update: draaiuren_onderhoud
+
+number:
+  - platform: template
+    id: onderhoudsinterval
+    name: Onderhoudsinterval
+    icon: mdi:wrench-clock
+    entity_category: config
+    unit_of_measurement: h
+    min_value: 25
+    max_value: 2000
+    step: 25
+    initial_value: 250
+    optimistic: true
+    restore_value: true
+
+binary_sensor:
+  - platform: template
+    name: Onderhoud nodig
+    device_class: problem
+    lambda: |-
+      return id(draaitijd_onderhoud_s) / 3600.0f >= id(onderhoudsinterval).state;
 
 sensor:
   - platform: wifi_signal
@@ -81,8 +155,39 @@ sensor:
   - platform: uptime
     name: Uptime
     entity_category: diagnostic
+  - platform: template
+    id: draaiuren_totaal
+    name: Draaiuren
+    icon: mdi:timer-cog-outline
+    unit_of_measurement: h
+    device_class: duration
+    state_class: total_increasing
+    accuracy_decimals: 1
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      return id(draaitijd_totaal_s) / 3600.0f;
+  - platform: template
+    id: draaiuren_onderhoud
+    name: Draaiuren sinds onderhoud
+    icon: mdi:air-filter
+    unit_of_measurement: h
+    device_class: duration
+    state_class: measurement
+    accuracy_decimals: 1
+    update_interval: never
+    lambda: |-
+      return id(draaitijd_onderhoud_s) / 3600.0f;
 
 button:
   - platform: restart
     name: Herstart
     entity_category: config
+  - platform: template
+    name: Onderhoud uitgevoerd
+    icon: mdi:wrench-check
+    entity_category: config
+    on_press:
+      - lambda: |-
+          id(draaitijd_onderhoud_s) = 0;
+      - component.update: draaiuren_onderhoud

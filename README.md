@@ -30,6 +30,17 @@ GitHub Actions bouwt `breeze-<merk>.factory.yaml` bij elke wijziging in `esphome
 
 Units met deze firmware krijgen in Home Assistant een update-entiteit *Firmware*; elke nieuwe build verschijnt daar als update. Met *Take control* in de ESPHome Builder stap je over op route 1.
 
+### Wat Breeze voor Toshiba in Home Assistant zet
+
+- Het airco-entity (standen, temperatuur, ventilator, zwenken verticaal én horizontaal) en het vermogensniveau.
+- **Lamellen verticaal**: vaste stand (boven t/m onder) of zwenken.
+- **Plasmafilter** aan/uit. Heeft de binnenunit geen plasmafilter, dan meldt hij nooit een stand en blijft de schakelaar op *Onbekend*.
+- **Ruimtetemperatuur**: de unit meldt hele graden, elke minuut opgevraagd en afgevlakt met een glijdend gemiddelde over 10 minuten.
+- **Buitentemperatuur** van de buitenunit.
+- **Draaiuren** (totaal) en **Draaiuren sinds onderhoud**, met een instelbaar **Onderhoudsinterval** (standaard 250 uur), een melding **Onderhoud nodig** en een knop **Onderhoud uitgevoerd** die de teller op nul zet. Een uur telt mee zodra de unit aan staat, in elke stand.
+
+Wat een unit niet ondersteunt (bijvoorbeeld horizontale lamellen), negeert hij. Losse ESPHome-entiteiten kunnen in Home Assistant niet op *Niet beschikbaar* staan; dat kan alleen het hele apparaat.
+
 ## Licenties
 
-De firmware gebruikt de ESPHome-componenten [esphome_toshiba_suzumi](https://github.com/pedobry/esphome_toshiba_suzumi) en [esphome-daikin-s21](https://github.com/asund/esphome-daikin-s21), beide GPL-3. Wie gecompileerde firmware verspreidt, moet de broncode beschikbaar stellen; dat gebeurt hier: de config staat in deze repository en de componenten worden bij het bouwen van GitHub gehaald. Merknamen worden alleen beschrijvend gebruikt ("voor Toshiba", "voor Daikin"); dit product is niet van of goedgekeurd door Toshiba of Daikin.
+De firmware gebruikt de ESPHome-componenten [esphome_toshiba_suzumi](https://github.com/pedobry/esphome_toshiba_suzumi) en [esphome-daikin-s21](https://github.com/asund/esphome-daikin-s21), beide GPL-3. Wie gecompileerde firmware verspreidt, moet de broncode beschikbaar stellen; dat gebeurt hier: de config staat in deze repository en de componenten worden bij het bouwen van GitHub gehaald. De Toshiba-component staat als aangepaste kopie (met plasmafilter) in [`esphome/components/toshiba_suzumi/`](esphome/components/toshiba_suzumi/NERDHOME.md), met de oorspronkelijke GPL-3-licentie en een overzicht van de wijzigingen. Merknamen worden alleen beschrijvend gebruikt ("voor Toshiba", "voor Daikin"); dit product is niet van of goedgekeurd door Toshiba of Daikin.

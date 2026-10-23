@@ -33,7 +33,8 @@ jobs:
           python-version: "3.12"
 
       - name: Install ESPHome
-        run: pip install esphome
+        # packaging: imported by the toshiba_suzumi component, not always pulled in by esphome itself
+        run: pip install esphome packaging
 
       - name: Version
         id: v

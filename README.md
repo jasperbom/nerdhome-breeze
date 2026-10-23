@@ -33,13 +33,20 @@ Units met deze firmware krijgen in Home Assistant een update-entiteit *Firmware*
 ### Wat Breeze voor Toshiba in Home Assistant zet
 
 - Het airco-entity (standen, temperatuur, ventilator, zwenken verticaal én horizontaal) en het vermogensniveau.
+- **Actie**: of de unit echt koelt, verwarmt, ontvochtigt, ventileert of stilstaat (*inactief*), op basis van de compressor in het buitendeel.
+- **Presets**: Eco, Boost (Hi POWER), Silent 1 en 2, Slapen, Comfort, Fireplace 1 en 2. Vorstbeveiliging (8 °C) en de vloerstand staan bewust uit.
 - **Lamellen verticaal**: vaste stand (boven t/m onder) of zwenken.
 - **Plasmafilter** aan/uit. Heeft de binnenunit geen plasmafilter, dan meldt hij nooit een stand en blijft de schakelaar op *Onbekend*.
+- **Zelfreiniging**: aan zolang de unit zich na koelen of drogen droogblaast (ca. 30 minuten, ventilator laag, airco staat op uit).
+- **Wifi-lampje** op de binnenunit aan/uit; de stand wordt onthouden.
 - **Ruimtetemperatuur**: de unit meldt hele graden, elke minuut opgevraagd en afgevlakt met een glijdend gemiddelde over 10 minuten.
-- **Buitentemperatuur** van de buitenunit.
+- **Buitentemperatuur** van de buitenunit (alleen als het buitendeel aan staat).
+- **Energie vandaag** (kWh) uit de eigen meter van de unit en een geschat **Vermogen** (W), op modellen met energiemeting. De unit krijgt daarvoor de klok van Home Assistant.
 - **Draaiuren** (totaal) en **Draaiuren sinds onderhoud**, met een instelbaar **Onderhoudsinterval** (standaard 250 uur), een melding **Onderhoud nodig** en een knop **Onderhoud uitgevoerd** die de teller op nul zet. Een uur telt mee zodra de unit aan staat, in elke stand.
+- **Diagnose, standaard verborgen**: compressorbelasting en -stroom, pers- en zuiggastemperatuur, warmtewisselaar buiten en binnen (TC, TCJ) en ventilatortoerental. Deze komen uit statusberichten die niet elk model stuurt; zet ze in Home Assistant aan als je unit ze levert.
+- **Van de Breeze zelf**: chiptemperatuur, IP-adres, wifi-netwerk, wifi-signaal, ESPHome-versie en uptime.
 
-Wat een unit niet ondersteunt (bijvoorbeeld horizontale lamellen), negeert hij. Losse ESPHome-entiteiten kunnen in Home Assistant niet op *Niet beschikbaar* staan; dat kan alleen het hele apparaat.
+Wat een unit niet ondersteunt (bijvoorbeeld horizontale lamellen of een preset), negeert hij. Losse ESPHome-entiteiten kunnen in Home Assistant niet op *Niet beschikbaar* staan; dat kan alleen het hele apparaat.
 
 ## Licenties
 

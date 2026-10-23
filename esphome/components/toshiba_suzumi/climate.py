@@ -15,6 +15,7 @@ from esphome.const import (
     DEVICE_CLASS_ENERGY,
     DEVICE_CLASS_POWER,
     CONF_TIME_ID,
+    ENTITY_CATEGORY_CONFIG,
     STATE_CLASS_TOTAL_INCREASING,
     __version__ as ESPHOME_VERSION
 )
@@ -44,6 +45,7 @@ CONF_SPECIAL_MODE_MODES = "modes" # deprecated - replaced by CONF_SUPPORTED_PRES
 CONF_SUPPORTED_PRESETS = "supported_presets"
 CONF_SELF_CLEAN = "self_clean"
 CONF_PLASMA = "plasma"  # Nerdhome addition: plasma / ion filter
+CONF_WIFI_LED = "wifi_led"  # Nerdhome addition: Wi-Fi LED as a switch
 CONF_TIME_SYNC_INTERVAL = "time_sync_interval"
 CONF_ENERGY = "energy"
 CONF_POWER = "power"
@@ -59,6 +61,7 @@ ToshibaPwrModeSelect = toshiba_ns.class_('ToshibaPwrModeSelect', select.Select)
 ToshibaSpecialModeSelect = toshiba_ns.class_('ToshibaSpecialModeSelect', select.Select)
 ToshibaVerticalAirDirectionSelect = toshiba_ns.class_('ToshibaVerticalAirDirectionSelect', select.Select)
 ToshibaPlasmaSwitch = toshiba_ns.class_('ToshibaPlasmaSwitch', switch.Switch)
+ToshibaWifiLedSwitch = toshiba_ns.class_('ToshibaWifiLedSwitch', switch.Switch)
 
 CONFIG_SCHEMA = climate.climate_schema(ToshibaClimateUart).extend(
     {
@@ -133,6 +136,12 @@ CONFIG_SCHEMA = climate.climate_schema(ToshibaClimateUart).extend(
         cv.Optional(CONF_PLASMA): switch.switch_schema(
             ToshibaPlasmaSwitch,
             icon="mdi:air-purifier",
+        ),
+        cv.Optional(CONF_WIFI_LED): switch.switch_schema(
+            ToshibaWifiLedSwitch,
+            icon="mdi:led-on",
+            entity_category=ENTITY_CATEGORY_CONFIG,
+            default_restore_mode="RESTORE_DEFAULT_ON",
         ),
         cv.Optional(FEATURE_HORIZONTAL_SWING): cv.boolean,
         cv.Optional(DISABLE_WIFI_LED): cv.boolean,
@@ -227,6 +236,11 @@ async def to_code(config):
         sw = await switch.new_switch(config[CONF_PLASMA])
         await cg.register_parented(sw, config[CONF_ID])
         cg.add(var.set_plasma_switch(sw))
+
+    if CONF_WIFI_LED in config:
+        sw = await switch.new_switch(config[CONF_WIFI_LED])
+        await cg.register_parented(sw, config[CONF_ID])
+        cg.add(var.set_wifi_led_switch(sw))
 
     if FEATURE_HORIZONTAL_SWING in config:
         cg.add(var.set_horizontal_swing(True))

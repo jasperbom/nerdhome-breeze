@@ -90,13 +90,102 @@ climate:
     horizontal_swing: true
     plasma:
       name: Plasmafilter
-    # Optional, enable after checking your unit supports them:
-    # self_clean:
-    #   name: Zelfreiniging
-    # disable_wifi_led: true
+    # Zelfreiniging: de unit droogt zich na koelen/drogen (>= 10 min) ca. 30 min uit met
+    # de ventilator op laag; het climate-entity staat dan op uit, met actie "ventilator".
+    self_clean:
+      name: Zelfreiniging
+      icon: mdi:fan-clock
+    # Wifi-lampje op de binnenunit; de stand wordt in flash onthouden (standaard aan).
+    wifi_led:
+      name: Wifi-lampje
+    # Speciale standen als presets. "8 degrees" (vorstbeveiliging, verlaagt het bereik naar
+    # 5 °C en schakelt onder 17 °C vanzelf om) en "Floor" (vloermodellen) staan bewust uit.
+    # Een unit die een stand niet kent, negeert hem.
+    supported_presets:
+      - Standard
+      - Hi POWER
+      - ECO
+      - Silent#1
+      - Silent#2
+      - Sleep
+      - Comfort
+      - Fireplace 1
+      - Fireplace 2
+    # Energie uit de eigen meter van de unit (nieuwere modellen). De unit telt per uur van
+    # de dag; daarvoor krijgt hij de klok van Home Assistant. Vermogen wordt elke minuut
+    # geschat uit de toename (resolutie ca. 60 W).
+    time_id: ha_time
+    energy:
+      name: Energie vandaag
+      unit_of_measurement: kWh
+      accuracy_decimals: 2
+      filters:
+        - multiply: 0.001
+    power:
+      name: Vermogen
+      accuracy_decimals: 0
+    # Statusberichten die een draaiende unit uit zichzelf stuurt (niet elk model).
+    # Standaard verborgen in Home Assistant; aanzetten als je unit ze levert.
+    cdu_load:
+      name: Compressorbelasting
+      icon: mdi:gauge
+      entity_category: diagnostic
+      disabled_by_default: true
+    cdu_iac:
+      name: Compressorstroom
+      entity_category: diagnostic
+      disabled_by_default: true
+    cdu_td_temp:
+      name: Persgastemperatuur
+      icon: mdi:thermometer-high
+      entity_category: diagnostic
+      disabled_by_default: true
+    cdu_ts_temp:
+      name: Zuiggastemperatuur
+      icon: mdi:thermometer-low
+      entity_category: diagnostic
+      disabled_by_default: true
+    cdu_te_temp:
+      name: Warmtewisselaar buiten
+      icon: mdi:heat-wave
+      entity_category: diagnostic
+      disabled_by_default: true
+    fcu_tc_temp:
+      name: Warmtewisselaar binnen (TC)
+      icon: mdi:heat-wave
+      entity_category: diagnostic
+      disabled_by_default: true
+    fcu_tcj_temp:
+      name: Warmtewisselaar binnen (TCJ)
+      icon: mdi:heat-wave
+      entity_category: diagnostic
+      disabled_by_default: true
+    fcu_fan_rpm:
+      name: Ventilatortoerental
+      icon: mdi:fan
+      entity_category: diagnostic
+      disabled_by_default: true
 
 status_led:
   pin: GPIO23
+
+# Klok uit Home Assistant, voor de energiemeter van de unit.
+time:
+  - platform: homeassistant
+    id: ha_time
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: IP-adres
+      entity_category: diagnostic
+    ssid:
+      name: Wifi-netwerk
+      entity_category: diagnostic
+  - platform: version
+    name: ESPHome-versie
+    hide_timestamp: true
+    entity_category: diagnostic
 
 # --- Draaiuren en onderhoud -------------------------------------------------------
 # Telt elke minuut dat de binnenunit aan staat (elke stand behalve uit). De tellers
@@ -154,6 +243,9 @@ sensor:
     entity_category: diagnostic
   - platform: uptime
     name: Uptime
+    entity_category: diagnostic
+  - platform: internal_temperature
+    name: Chiptemperatuur
     entity_category: diagnostic
   - platform: template
     id: draaiuren_totaal

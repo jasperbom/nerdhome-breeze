@@ -1,6 +1,7 @@
 #include "toshiba_climate.h"
 #include "toshiba_climate_mode.h"
 #include "esphome/core/log.h"
+#include <cmath>
 #ifdef USE_TIME
 #include "esphome/components/time/real_time_clock.h"
 #endif
@@ -12,6 +13,10 @@ using namespace esphome::climate;
 
 static const int RECEIVE_TIMEOUT = 200;
 static const int COMMAND_DELAY = 100;
+// Nerdhome: how long a compressor reading from an ODU status message stays valid.
+// A running unit sends ODU status every few seconds; without a recent one the
+// climate action falls back to the selected mode.
+static const uint32_t ODU_STATUS_TIMEOUT_MS = 180000;
 
 /**
  * Checksum is calculated from all bytes excluding start byte.
@@ -199,8 +204,14 @@ void ToshibaClimateUart::setup() {
   this->start_handshake();
   // load initial sensor data from the unit
   this->getInitData();
-  // Set Wi-Fi LED initial state
-  this->set_wifi_led(!this->wifi_led_disabled_);
+  // Set Wi-Fi LED initial state. Nerdhome: with the wifi_led switch configured, use
+  // its restored state (flash) instead of the fixed disable_wifi_led option.
+  bool wifi_led_on = !this->wifi_led_disabled_;
+  if (this->wifi_led_switch_ != nullptr) {
+    wifi_led_on = this->wifi_led_switch_->get_initial_state_with_restore_mode().value_or(wifi_led_on);
+    this->wifi_led_switch_->publish_state(wifi_led_on);
+  }
+  this->set_wifi_led(wifi_led_on);
 }
 
 /**
@@ -299,6 +310,12 @@ void ToshibaClimateUart::parseResponse(std::vector<uint8_t> rawData) {
   }
   switch (sensor) {
     case ToshibaCommandType::ENERGY_DAILY: {
+      // Nerdhome: units without energy monitoring answer with a short message;
+      // the hourly table below needs the full 69/70-byte frame.
+      if (length < 69) {
+        ESP_LOGD(TAG, "Energy register not supported by this unit (length %d)", length);
+        break;
+      }
       ESP_LOGI(TAG, "Received daily energy update");
       uint32_t total_energy = 0;
 #ifdef USE_TIME
@@ -488,9 +505,19 @@ void ToshibaClimateUart::parseResponse(std::vector<uint8_t> rawData) {
       break;
     }
     case ToshibaCommandType::ODU_STATUS: {
+      if (length != 22 && length != 24)  // Nerdhome: only the extended frames carry the data
+        break;
       // Outdoor unit status - data offset depends on message length
       uint8_t odu_offset = (length == 22) ? 13 : 15;
       ESP_LOGI(TAG, "Received ODU status");
+      {
+        // Nerdhome: remember whether the compressor runs, for the climate action.
+        uint8_t load_raw = rawData[odu_offset + 3];
+        if (load_raw < 254) {
+          this->compressor_running_ = load_raw > 0;
+          this->last_odu_status_ms_ = millis();
+        }
+      }
       if (cdu_td_temp_sensor_ != nullptr) {
         int8_t val = static_cast<int8_t>(rawData[odu_offset + 0]);
         if (val != 127) {
@@ -524,6 +551,8 @@ void ToshibaClimateUart::parseResponse(std::vector<uint8_t> rawData) {
       break;
     }
     case ToshibaCommandType::IDU_STATUS: {
+      if (length != 22 && length != 24)  // Nerdhome: only the extended frames carry the data
+        break;
       // Indoor unit status - data offset depends on message length
       uint8_t idu_offset = (length == 22) ? 13 : 15;
       ESP_LOGI(TAG, "Received IDU status");
@@ -549,6 +578,7 @@ void ToshibaClimateUart::parseResponse(std::vector<uint8_t> rawData) {
       break;
   }
   this->rx_message_.clear();  // message processed, clear buffer
+  this->update_action_();     // Nerdhome: cooling/heating/idle from mode + compressor
   this->publish_state();      // publish current values to MQTT
 }
 
@@ -636,6 +666,14 @@ void ToshibaClimateUart::update() {
   // Periodic Energy Sync (Runs every 60s if energy or power sensors are configured)
   if ((this->energy_sensor_ != nullptr || this->power_sensor_ != nullptr) && (now - this->last_energy_sync_ > 60000)) {
     this->sync_energy_();
+  }
+
+  // Nerdhome: a compressor reading expires after ODU_STATUS_TIMEOUT_MS, so re-evaluate
+  // the action here too (the unit may have stopped sending ODU status).
+  auto previous_action = this->action;
+  this->update_action_();
+  if (this->action != previous_action) {
+    this->publish_state();
   }
 }
 
@@ -779,6 +817,7 @@ void ToshibaClimateUart::control(const climate::ClimateCall &call) {
     }
   }
 
+  this->update_action_();
   this->publish_state();
 }
 
@@ -815,6 +854,8 @@ ClimateTraits ToshibaClimateUart::traits() {
     traits.set_supported_swing_modes({climate::CLIMATE_SWING_OFF, climate::CLIMATE_SWING_VERTICAL});
   }
   traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
+  // Nerdhome: report the action (cooling / heating / idle / fan / off).
+  traits.add_feature_flags(climate::CLIMATE_SUPPORTS_ACTION);
 
   // Toshiba AC has more FAN levels that standard climate component, we have to use custom.
   traits.add_supported_fan_mode(CLIMATE_FAN_AUTO);
@@ -890,6 +931,58 @@ void ToshibaClimateUart::on_set_plasma(bool state) {
 }
 
 void ToshibaPlasmaSwitch::write_state(bool state) { parent_->on_set_plasma(state); }
+
+// Nerdhome addition: Wi-Fi LED switch. No read-back register, so publish directly.
+void ToshibaWifiLedSwitch::write_state(bool state) {
+  parent_->set_wifi_led(state);
+  this->publish_state(state);
+}
+
+/**
+ * Nerdhome addition: derive the climate action.
+ * - off, or fan while the post-shutdown self-clean cycle runs
+ * - fan in fan-only mode
+ * - otherwise, with a recent ODU status: idle when the compressor stands still,
+ *   else cooling / heating / drying by mode
+ * - without ODU status (units that don't send it): by mode, as before
+ */
+void ToshibaClimateUart::update_action_() {
+  climate::ClimateAction action;
+  bool odu_fresh =
+      this->last_odu_status_ms_ != 0 && (millis() - this->last_odu_status_ms_) < ODU_STATUS_TIMEOUT_MS;
+
+  if (this->self_clean_running_) {
+    action = climate::CLIMATE_ACTION_FAN;
+  } else if (this->mode == climate::CLIMATE_MODE_OFF) {
+    action = climate::CLIMATE_ACTION_OFF;
+  } else if (this->mode == climate::CLIMATE_MODE_FAN_ONLY) {
+    action = climate::CLIMATE_ACTION_FAN;
+  } else if (odu_fresh && !this->compressor_running_) {
+    action = climate::CLIMATE_ACTION_IDLE;
+  } else {
+    switch (this->mode) {
+      case climate::CLIMATE_MODE_COOL:
+        action = climate::CLIMATE_ACTION_COOLING;
+        break;
+      case climate::CLIMATE_MODE_HEAT:
+        action = climate::CLIMATE_ACTION_HEATING;
+        break;
+      case climate::CLIMATE_MODE_DRY:
+        action = climate::CLIMATE_ACTION_DRYING;
+        break;
+      case climate::CLIMATE_MODE_HEAT_COOL:
+        action = (!std::isnan(this->current_temperature) && !std::isnan(this->target_temperature) &&
+                  this->current_temperature < this->target_temperature)
+                     ? climate::CLIMATE_ACTION_HEATING
+                     : climate::CLIMATE_ACTION_COOLING;
+        break;
+      default:
+        action = climate::CLIMATE_ACTION_IDLE;
+        break;
+    }
+  }
+  this->action = action;
+}
 
 /**
  * Scan all statuses from 128 to 255 in order to find unknown features.

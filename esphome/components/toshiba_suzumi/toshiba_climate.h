@@ -73,6 +73,7 @@ class ToshibaClimateUart : public PollingComponent, public climate::Climate, pub
   }
   void set_self_clean_sensor(binary_sensor::BinarySensor *self_clean_sensor) { self_clean_sensor_ = self_clean_sensor; }
   void set_plasma_switch(switch_::Switch *plasma_switch) { plasma_switch_ = plasma_switch; }
+  void set_wifi_led_switch(switch_::Switch *wifi_led_switch) { wifi_led_switch_ = wifi_led_switch; }
   void set_horizontal_swing(bool enabled) { horizontal_swing_ = enabled; }
   void disable_heat_mode(bool disabled) { heat_mode_disabled_ = disabled; }
   void disable_wifi_led(bool disabled) { wifi_led_disabled_ = disabled; }
@@ -100,6 +101,11 @@ class ToshibaClimateUart : public PollingComponent, public climate::Climate, pub
   select::Select *vertical_air_direction_select_ = nullptr;
   binary_sensor::BinarySensor *self_clean_sensor_ = nullptr;
   switch_::Switch *plasma_switch_ = nullptr;
+  switch_::Switch *wifi_led_switch_ = nullptr;
+  // Nerdhome addition: climate action from the compressor load in the unsolicited
+  // ODU status messages. 0 = no ODU status received yet.
+  uint32_t last_odu_status_ms_ = 0;
+  bool compressor_running_ = false;
   sensor::Sensor *indoor_temp_sensor_ = nullptr;
   sensor::Sensor *outdoor_temp_sensor_ = nullptr;
   sensor::Sensor *cdu_td_temp_sensor_ = nullptr;
@@ -141,6 +147,7 @@ class ToshibaClimateUart : public PollingComponent, public climate::Climate, pub
   void on_set_vertical_air_direction(const std::string &value);
   void publish_vertical_air_direction_(SWING swing_mode);
   void on_set_plasma(bool state);
+  void update_action_();
   void configure_supported_custom_modes_();
 #ifdef USE_TIME
   void check_time_sync_(uint32_t now);
@@ -152,6 +159,7 @@ class ToshibaClimateUart : public PollingComponent, public climate::Climate, pub
   friend class ToshibaPwrModeSelect;
   friend class ToshibaVerticalAirDirectionSelect;
   friend class ToshibaPlasmaSwitch;
+  friend class ToshibaWifiLedSwitch;
 };
 
 class ToshibaPwrModeSelect : public select::Select, public esphome::Parented<ToshibaClimateUart> {
@@ -168,6 +176,14 @@ class ToshibaVerticalAirDirectionSelect : public select::Select, public esphome:
 // unit answers the PLASMA register, so on units without a plasma filter the
 // entity stays "unknown" in Home Assistant.
 class ToshibaPlasmaSwitch : public switch_::Switch, public esphome::Parented<ToshibaClimateUart> {
+ protected:
+  void write_state(bool state) override;
+};
+
+// Nerdhome addition: Wi-Fi LED on the indoor unit as a switch instead of the fixed
+// disable_wifi_led option. The unit has no readable LED register, so the state is
+// remembered in flash (restore_mode) and sent to the unit at boot.
+class ToshibaWifiLedSwitch : public switch_::Switch, public esphome::Parented<ToshibaClimateUart> {
  protected:
   void write_state(bool state) override;
 };

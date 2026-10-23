@@ -15,5 +15,20 @@ commit `a306be6` (9 juli 2026), onder de GPL-3-licentie (zie `LICENSE`).
 - Na schakelen wordt het register teruggelezen; de schakelaar verspringt pas als de unit het
   bevestigt.
 
+## Wijzigingen door Nerdhome, tweede ronde (23 oktober 2026)
+
+- **Actie (hvac_action):** het climate-entity meldt nu of de unit echt koelt, verwarmt,
+  ontvochtigt, alleen ventileert, stilstaat of uit is. Dat komt uit de compressorbelasting
+  in de ODU-statusberichten die de unit elke minuut uit zichzelf stuurt (ook als hij uit
+  staat). Belasting 0 betekent *inactief*. Is er drie minuten geen ODU-status geweest
+  (units die hem niet sturen), dan volgt de actie de gekozen stand, zoals voorheen.
+  Tijdens de zelfreiniging na het uitzetten is de actie *ventilator*.
+- **Wifi-lampje als schakelaar** (`wifi_led:`), in plaats van alleen de vaste optie
+  `disable_wifi_led`. De unit heeft geen leesbaar register voor het lampje, dus de stand
+  wordt in flash onthouden en bij het opstarten opnieuw verstuurd.
+- **Grenscontroles:** een antwoord op het energieregister dat korter is dan de volledige
+  uurtabel (units zonder energiemeter), of een ODU/IDU-bericht met een onverwachte lengte,
+  wordt genegeerd in plaats van buiten het bericht te lezen.
+
 Gewijzigde bestanden: `climate.py`, `toshiba_climate.h`, `toshiba_climate.cpp`,
 `toshiba_climate_mode.h`. Alle toevoegingen zijn in de code gemarkeerd met "Nerdhome".
